@@ -20,8 +20,8 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  return { width, height, getArea() { return width * height; } };
 }
 
 
@@ -35,8 +35,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +51,10 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  Object.setPrototypeOf(obj, proto);
+  return obj;
 }
 
 
@@ -110,33 +112,75 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+
+  cl: [],
+  at: [],
+  psCl: [],
+
+  element(value) {
+    const newThis = { ...this };
+    if (newThis.el) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    if (newThis.i || newThis.psEl || newThis.cl.length > 0 || newThis.at.length > 0 || newThis.psCl.length > 0) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+
+    newThis.el = value;
+    return newThis;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    const newThis = { ...this };
+    if (newThis.i) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    if (newThis.psEl || newThis.cl.length > 0 || newThis.at.length > 0 || newThis.psCl.length > 0) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+
+    newThis.i = `#${value}`;
+    return newThis;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    const newThis = { ...this };
+    if (newThis.psEl || newThis.at.length > 0 || newThis.psCl.length > 0) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+
+    newThis.cl = [...this.cl];
+    newThis.cl.push(`.${value}`);
+    return newThis;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    const newThis = { ...this };
+    if (newThis.psEl || newThis.psCl.length > 0) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+
+    newThis.at = Object.assign([], this.at);
+    newThis.at.push(`[${value}]`);
+    return newThis;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    const newThis = { ...this };
+    if (newThis.psEl) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+
+    newThis.psCl = Object.assign([], this.psCl);
+    newThis.psCl.push(`:${value}`);
+    return newThis;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    const newThis = { ...this };
+    if (newThis.psEl) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    newThis.psEl = `::${value}`;
+    return newThis;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  stringify() {
+    return (this.el ? this.el : '') + (this.i ? this.i : '') + (this.cl.length > 0 ? this.cl.join('') : '')
+      + (this.at.length > 0 ? this.at.join('') : '') + (this.psCl.length > 0 ? this.psCl.join('') : '')
+      + (this.psEl ? this.psEl : '') + (this.combination ? this.combination : '');
+  },
+
+  combine(selector1, combinator, selector2) {
+    const newThis = { ...this };
+    newThis.combination = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return newThis;
   },
 };
 
